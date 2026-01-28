@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chuyển đổi giọng nói sang văn bản</title>
+    <style>
+      body {
+        font-family: Arial;
+        margin: 40px;
+      }
+      button {
+        padding: 10px 20px;
+        margin-right: 10px;
+      }
+      textarea {
+        width: 100%;
+        height: 200px;
+        margin-top: 20px;
+      }
+      #status {
+        margin-top: 10px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>🎤 Chuyển giọng nói thành văn bản</h2>
+
+    <button id="btnStart">Bắt đầu ghi</button>
+    <button id="btnStop" disabled>Dừng ghi</button>
+
+    <div id="status">Trạng thái: Chưa ghi</div>
+
+    <textarea
+      id="output"
+      placeholder="Văn bản sẽ xuất hiện ở đây..."
+    ></textarea>
+
+    <script>
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      const btnStart = document.getElementById("btnStart");
+      const btnStop = document.getElementById("btnStop");
+      const output = document.getElementById("output");
+      const status = document.getElementById("status");
+
+      let recognition;
+      let isRecording = false;
+      let finalText = "";
+
+      // Kiểm tra hỗ trợ
+      if (!SpeechRecognition) {
+        status.innerText = "Trình duyệt không hỗ trợ Speech To Text";
+        btnStart.disabled = true;
+      } else {
+        recognition = new SpeechRecognition();
+        recognition.lang = "vi-VN";
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onstart = () => {
+          isRecording = true;
+          status.innerText = "Trạng thái: Đang ghi...";
+          btnStart.disabled = true;
+          btnStop.disabled = false;
+        };
+
+        recognition.onresult = (event) => {
+          let interimText = "";
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+              finalText += event.results[i][0].transcript + "\n";
+            } else {
+              interimText += event.results[i][0].transcript;
+            }
+          }
+
+          output.value = finalText + interimText;
+        };
+
+        recognition.onerror = (event) => {
+          status.innerText = "Lỗi: " + event.error;
+        };
+
+        recognition.onend = () => {
+          if (isRecording) {
+            // Tự khởi động lại nếu bị ngắt
+            recognition.start();
+          } else {
+            status.innerText = "Trạng thái: Đã dừng";
+            btnStart.disabled = false;
+            btnStop.disabled = true;
+          }
+        };
+      }
+
+      btnStart.onclick = () => {
+        if (!isRecording) {
+          finalText = "";
+          recognition.start();
+        }
+      };
+
+      btnStop.onclick = () => {
+        isRecording = false;
+        recognition.stop();
+      };
+    </script>
+  </body>
+</html>
